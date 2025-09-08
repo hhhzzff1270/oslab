@@ -1,0 +1,14 @@
+# 编译输出
+*.o
+*.elf
+*.bin
+*.img
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*~
+
+# QEMU相关
+virt.dtb

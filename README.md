@@ -1,22 +1,22 @@
-# Hello OS
 
-一个最小的RISC-V操作系统，在QEMU中输出"Hello OS"。
+一个在QEMU中运行的最小RISC-V操作系统，输出"Hello OS"。
 
 ## 功能特性
 
-- RISC-V 64位架构支持
-- 最小启动流程
-- UART串口输出
-- 简单的内存管理
+- ✅ RISC-V 64位架构支持
+- ✅ 最小启动流程（汇编引导）
+- ✅ UART串口输出
+- ✅ BSS段自动清零
+- ✅ 栈空间设置
+- ✅ 从汇编跳转到C代码
 
-## 构建和运行
-
-### 环境要求
-- riscv64-unknown-elf-gcc
-- qemu-system-riscv64
-- make
-
-### 编译运行
-```bash
-make
-make run
+## 项目结构
+hello-os/
+├── kernel/
+│ ├── entry.S # 启动汇编代码（设置栈、清零BSS）
+│ ├── kernel.ld # 链接脚本（内存布局）
+│ ├── uart.c # 串口驱动（字符输出）
+│ └── main.c # 主函数（Hello OS输出）
+├── Makefile # 构建系统
+├── README.md # 项目说明
+└── .gitignore # Git忽略规则

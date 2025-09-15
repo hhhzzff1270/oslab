@@ -1,16 +1,19 @@
 CC = riscv64-unknown-elf-gcc
-LD = riscv64-unknown-elf-ld
-OBJCOPY = riscv64-unknown-elf-objcopy
-CFLAGS = -march=rv64gc -mabi=lp64d -nostdlib -fno-builtin -Wall -O2
+CFLAGS = -march=rv64gc -mabi=lp64d -nostdlib -fno-builtin -Wall -O2 -I. -mcmodel=medany
+LDFLAGS = -T kernel/kernel.ld -nostdlib -lgcc
 
-KERNEL_SRCS = kernel/entry.S kernel/uart.c kernel/main.c
+KERNEL_SRCS = kernel/entry.S kernel/uart.c kernel/printf.c kernel/main.c
 KERNEL_OBJS = $(KERNEL_SRCS:.c=.o)
 KERNEL_OBJS := $(KERNEL_OBJS:.S=.o)
 
+.PHONY: all run debug clean
+
 all: kernel.elf
 
-kernel.elf: $(KERNEL_OBJS) kernel/kernel.ld
-	$(CC) $(CFLAGS) -T kernel/kernel.ld -o $@ $(KERNEL_OBJS) -lgcc
+kernel.elf: $(KERNEL_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(KERNEL_OBJS)
+	@echo "Build successful!"
+	@riscv64-unknown-elf-size kernel.elf
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -19,12 +22,12 @@ kernel.elf: $(KERNEL_OBJS) kernel/kernel.ld
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 run: kernel.elf
-	qemu-system-riscv64 -machine virt -nographic \
-		-bios none -kernel kernel.elf
+	@echo "Starting QEMU..."
+	qemu-system-riscv64 -machine virt -nographic -bios none -kernel kernel.elf
 
 debug: kernel.elf
-	qemu-system-riscv64 -machine virt -nographic \
-		-bios none -kernel kernel.elf -s -S
+	@echo "Starting QEMU in debug mode..."
+	qemu-system-riscv64 -machine virt -nographic -bios none -kernel kernel.elf -s -S
 
 clean:
 	rm -f $(KERNEL_OBJS) kernel.elf

@@ -4,11 +4,18 @@
 *.bin
 *.img
 
+# 对象文件
+kernel/*.o
+
 # 编辑器文件
 .vscode/
 .idea/
 *.swp
 *~
+*.swo
+
+# 日志文件
+*.log
 
 # QEMU相关
 virt.dtb

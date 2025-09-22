@@ -1,100 +1,93 @@
-#include "printf.h"
-#include "uart.h"
+// printf.c
 #include <stdarg.h>
+#include "printf.h"
+// 假设 console_putc 在其他文件中实现
+extern void console_putc(char c);
 
-// 数字转换为字符串
-static void print_number(int num, int base, int sign) {
-    static char digits[] = "0123456789ABCDEF";
-    char buf[16];
-    int i = 0;
-    unsigned int n;
-    
+// 核心数字转换函数：将数字`num`以`base`进制输出，`sign`表示是否为有符号数
+static void print_number(long num, int base, int sign) {
+    char digits[] = "0123456789abcdef";
+    char buf[64]; // 足够存放64位二进制数
+    char *ptr = &buf[63]; // 从缓冲区末尾开始填充（逆序）
+    *ptr = '\0';
+    unsigned long n; // 使用无符号类型来处理所有情况
+
     if (sign && num < 0) {
-        n = -num;
-        uart_putc('-');
+        n = -num;       // 转换为正数
+        console_putc('-'); // 输出负号
     } else {
         n = num;
     }
-    
-    // 处理0的特殊情况
-    if (n == 0) {
-        uart_putc('0');
-        return;
-    }
-    
-    // 转换为字符串（逆序）
-    while (n > 0) {
-        buf[i++] = digits[n % base];
+
+    // 使用循环进行转换（避免递归）
+    do {
+        ptr--;
+        *ptr = digits[n % base];
         n /= base;
-    }
-    
-    // 逆序输出
-    while (--i >= 0) {
-        uart_putc(buf[i]);
+    } while (n != 0);
+
+    // 输出转换后的字符串
+    console_puts(ptr);
+}
+
+// 输出字符串
+void console_puts(const char *s) {
+    while (*s) {
+        console_putc(*s++);
     }
 }
 
-// 清屏功能
-void clear_screen(void) {
-    // ANSI转义序列：清屏并光标回到左上角
-    uart_puts("\033[2J");  // 清除整个屏幕
-    uart_puts("\033[H"); 
-}
-
-// 格式化输出函数
+// 主printf函数
 int printf(const char *fmt, ...) {
     va_list ap;
-    const char *p;
-    char *s;
-    int num;
-    char c;
-    
+    int state = 0; // 0: normal, 1: after '%'
+
     va_start(ap, fmt);
-    
-    for (p = fmt; *p; p++) {
-        if (*p != '%') {
-            uart_putc(*p);
-            continue;
-        }
-        
-        // 处理格式符
-        switch (*++p) {
-            case 'd':
-                num = va_arg(ap, int);
-                print_number(num, 10, 1);
-                break;
-                
-            case 'x':
-                num = va_arg(ap, int);
-                uart_puts("0x");
-                print_number(num, 16, 0);
-                break;
-                
-            case 's':
-                s = va_arg(ap, char *);
-                if (s == 0) {
-                    uart_puts("(null)");
-                } else {
-                    uart_puts(s);
+
+    for (int i = 0; fmt[i]; i++) {
+        char c = fmt[i];
+        if (state == 0) {
+            if (c == '%') {
+                state = 1; // 进入格式解析状态
+            } else {
+                console_putc(c); // 输出普通字符
+            }
+        } else if (state == 1) {
+            // 根据格式字符处理
+            switch (c) {
+                case 'd':
+                    print_number(va_arg(ap, int), 10, 1);
+                    break;
+                case 'u':
+                    print_number(va_arg(ap, unsigned int), 10, 0);
+                    break;
+                case 'x':
+                    print_number(va_arg(ap, unsigned int), 16, 0);
+                    break;
+                case 's': {
+                    char *s = va_arg(ap, char *);
+                    if (s == 0) {
+                        console_puts("(null)");
+                    } else {
+                        console_puts(s);
+                    }
+                    break;
                 }
-                break;
-                
-            case 'c':
-                c = (char)va_arg(ap, int);
-                uart_putc(c);
-                break;
-                
-            case '%':
-                uart_putc('%');
-                break;
-                
-            default:
-                uart_putc('%');
-                uart_putc(*p);
-                break;
+                case 'c':
+                    console_putc((char)va_arg(ap, int)); // char在可变参数中提升为int
+                    break;
+                case '%':
+                    console_putc('%');
+                    break;
+                default:
+                    // 未知格式符，原样输出%和字符
+                    console_putc('%');
+                    console_putc(c);
+                    break;
+            }
+            state = 0; // 处理完毕，回归普通状态
         }
     }
-    
     va_end(ap);
-    return 0;
+    return 0; // 通常返回输出的字符数，这里简化处理
 }

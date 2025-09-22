@@ -2,7 +2,7 @@ CC = riscv64-unknown-elf-gcc
 CFLAGS = -march=rv64gc -mabi=lp64d -nostdlib -fno-builtin -Wall -O2 -I. -mcmodel=medany
 LDFLAGS = -T kernel/kernel.ld -nostdlib -lgcc
 
-KERNEL_SRCS = kernel/entry.S kernel/uart.c kernel/printf.c kernel/main.c
+KERNEL_SRCS = kernel/entry.S kernel/uart.c kernel/printf.c kernel/main.c kernel/console.c
 KERNEL_OBJS = $(KERNEL_SRCS:.c=.o)
 KERNEL_OBJS := $(KERNEL_OBJS:.S=.o)
 

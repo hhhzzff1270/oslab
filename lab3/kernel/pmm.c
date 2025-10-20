@@ -17,7 +17,7 @@ void pmm_init(void) {
     uint64 end_addr = PHYSTOP;
     
     printf("PMM: initializing physical memory manager\n");
-    printf("PMM: free memory range [0x%p - 0x%p]\n", start, end_addr);
+    printf("PMM: free memory range [%p - %p]\n", start, end_addr);
     
     // 将所有可用页添加到空闲链表
     for (uint64 pa = start; pa < end_addr; pa += PGSIZE) {

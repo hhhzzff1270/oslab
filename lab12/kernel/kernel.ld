@@ -2,7 +2,6 @@ OUTPUT_ARCH(riscv)
 ENTRY(_start)
 
 SECTIONS {
-    /* 代码从0x80000000开始 */
     . = 0x80000000;
     .text : {
         *(.text .text.*)
@@ -17,17 +16,18 @@ SECTIONS {
     }
     
     .bss : {
-        _bss_start = .;
-        *(.bss .bss.*)
-        *(COMMON)
-        _bss_end = .;
-    }
-    
-    /* 栈空间 */
-    .stack : {
-        . = ALIGN(16);
-        stack_top = .;
-        . += 4096;  /* 4KB栈空间 */
+    _bss_start = .;
+    *(.bss .bss.*)
+    *(COMMON)
+    }  
+    _bss_end = .;
+
+    .stack : 
+    {
+    . = ALIGN(16);
+    stack_bottom = .;
+    . += 4096;
+    stack_top = .;
     }
     
     /DISCARD/ : {

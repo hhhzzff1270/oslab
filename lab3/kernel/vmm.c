@@ -71,7 +71,7 @@ void dump_pagetable(pagetable_t pt, int level) {
     for (int i = 0; i < 512; i++) {
         if (pt[i] & PTE_V) {
             for (int j = 0; j < level; j++) printf("  ");
-            printf("PTE[%d]: 0x%p -> 0x%p, perm: ", 
+            printf("PTE[%d]: %p -> %p, perm: ", 
                    i, pt[i], PTE2PA(pt[i]));
             
             if (pt[i] & PTE_R) printf("R");

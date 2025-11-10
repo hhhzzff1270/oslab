@@ -39,7 +39,7 @@ struct trapframe {
     uint64 t4;
     uint64 t5;
     uint64 t6;
-    
+
     uint64 epc;
     uint64 status;
     uint64 cause;
@@ -47,8 +47,9 @@ struct trapframe {
     uint64 insn;
 };
 
-// 中断类型
+// 中断类型：保留 S-mode 编号，新增 Machine timer 编号
 #define IRQ_S_TIMER  5
+#define IRQ_M_TIMER  7
 
 // 函数声明
 void trap_init(void);

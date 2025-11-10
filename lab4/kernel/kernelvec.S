@@ -6,7 +6,7 @@
 kernelvec:
     # 保存所有通用寄存器到栈中
     addi sp, sp, -256
-    
+
     # 保存通用寄存器
     sd ra, 0(sp)
     sd sp, 8(sp)
@@ -39,12 +39,11 @@ kernelvec:
     sd t4, 224(sp)
     sd t5, 232(sp)
     sd t6, 240(sp)
-    
-    # 调用C语言陷阱处理函数
-    # 传递陷阱帧指针作为参数 (sp)
+
+    # 调用 C 语言的 trap 处理（参数：sp）
     mv a0, sp
     call kerneltrap
-    
+
     # 恢复通用寄存器
     ld ra, 0(sp)
     ld sp, 8(sp)
@@ -77,12 +76,12 @@ kernelvec:
     ld t4, 224(sp)
     ld t5, 232(sp)
     ld t6, 240(sp)
-    
-    addi sp, sp, 256
-    
-    # 返回
-    sret
 
-# 机器模式定时器中断向量
+    addi sp, sp, 256
+
+    # 返回到产生陷阱的特权级（现在我们处理的是 Machine trap，所以用 mret）
+    mret
+
+# 机器模式定时器中断向量（可保留或不使用）
 .globl timervec
 .align 4

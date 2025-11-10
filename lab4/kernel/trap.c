@@ -9,13 +9,14 @@ void trap_init(void) {
     for (int i = 0; i < 32; i++) {
         interrupt_handlers[i] = 0;
     }
-    
-    // 设置监督/特权模式陷阱向量（保持原逻辑）
-    w_stvec((uint64)kernelvec);
-    
-    // 委托中断给S模式（使用 1UL 避免整型溢出）
-    w_mideleg((1UL << IRQ_S_TIMER));
-    
+
+    // 设置 Machine 模式陷阱向量 (因为 entry.S 在 M-mode 下直接进入 main)
+    extern void kernelvec(void);
+    asm volatile("csrw mtvec, %0" :: "r"(kernelvec));
+
+    // 不委派定时器中断给 S-mode：不要写 mideleg（保持默认或按需要设置）
+    // 如果代码里有 w_mideleg 的调用，请移除或注释
+
     printf("trap: interrupt system initialized\n");
 }
 
@@ -27,16 +28,19 @@ void register_interrupt(int irq, interrupt_handler_t handler) {
 
 void enable_interrupt(int irq) {
     if (irq >= 0 && irq < 32) {
-        uint64 sie = r_sie();
-        sie |= (1UL << irq);
-        w_sie(sie);
+        uint64 mie;
+        asm volatile("csrr %0, mie" : "=r"(mie));
+        mie |= (1UL << irq);
+        asm volatile("csrw mie, %0" :: "r"(mie));
     }
 }
 
 void enable_global_interrupts(void) {
-    uint64 sstatus = r_sstatus();
-    sstatus |= SSTATUS_SIE;
-    w_sstatus(sstatus);
+    uint64 mstatus;
+    asm volatile("csrr %0, mstatus" : "=r"(mstatus));
+    // MIE 在 mstatus 中的位，设置 MIE 以允许机器级中断
+    mstatus |= (1UL << 3);
+    asm volatile("csrw mstatus, %0" :: "r"(mstatus));
 }
 
 void kerneltrap(struct trapframe *tf) {
@@ -44,8 +48,7 @@ void kerneltrap(struct trapframe *tf) {
 
     int is_intr = (int)((cause >> 63) & 1);
     int num = (int)(cause & (~(1UL << 63)));
-    // 调试输出：打印是中断还是异常以及具体编号（避免 long/格式不匹配）
-    // 注意：打印频繁会影响时序，仅供调试定位问题时使用
+    // 调试输出：打印是中断还是异常以及具体编号
     printf("trap: cause=%d is_intr=%d\n", num, is_intr);
 
     if (is_intr) {

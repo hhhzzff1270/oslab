@@ -12,7 +12,7 @@ void test_physical_memory(void) {
     // 测试数据写入
     *(uint64*)page1 = 0x1234567890ABCDEF;
     printf("Write test: 0x%lx\n", *(uint64*)page1);
-    
+    printf("Before Free pages: %d\n", get_free_page_count());
     free_page(page1);
     free_page(page2);
     printf("Free pages: %d\n", get_free_page_count());
@@ -27,7 +27,7 @@ void test_virtual_memory(void) {
     // 分配物理页并建立映射
     void* phys_page = alloc_page();
     uint64 virt_addr = 0x1000000; // 任意虚拟地址
-    
+    printf("%d" , VPN(virt_addr, 1));
     if (map_page(pt, virt_addr, (uint64)phys_page, PTE_R | PTE_W) == 0) {
         printf("Mapped VA %p -> PA %p\n", virt_addr, phys_page);
         

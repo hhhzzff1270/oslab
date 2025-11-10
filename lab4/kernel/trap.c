@@ -10,11 +10,11 @@ void trap_init(void) {
         interrupt_handlers[i] = 0;
     }
     
-    // 设置监管模式陷阱向量
+    // 设置监督/特权模式陷阱向量（保持原逻辑）
     w_stvec((uint64)kernelvec);
     
-    // 委托中断给S模式
-    w_mideleg((1 << IRQ_S_TIMER));
+    // 委托中断给S模式（使用 1UL 避免整型溢出）
+    w_mideleg((1UL << IRQ_S_TIMER));
     
     printf("trap: interrupt system initialized\n");
 }
@@ -41,15 +41,20 @@ void enable_global_interrupts(void) {
 
 void kerneltrap(struct trapframe *tf) {
     uint64 cause = tf->cause;
-    
-    if (cause & (1UL << 63)) {
+
+    int is_intr = (int)((cause >> 63) & 1);
+    int num = (int)(cause & (~(1UL << 63)));
+    // 调试输出：打印是中断还是异常以及具体编号（避免 long/格式不匹配）
+    // 注意：打印频繁会影响时序，仅供调试定位问题时使用
+    printf("trap: cause=%d is_intr=%d\n", num, is_intr);
+
+    if (is_intr) {
         // 中断处理
-        cause &= ~(1UL << 63);
-        if (cause < 32 && interrupt_handlers[cause]) {
-            interrupt_handlers[cause](tf);
+        if (num < 32 && interrupt_handlers[num]) {
+            interrupt_handlers[num](tf);
         }
     } else {
         // 异常处理
-        printf("trap: exception %d\n", cause);
+        printf("trap: exception %d\n", num);
     }
 }

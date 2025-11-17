@@ -6,14 +6,17 @@ KERNEL_SRCS = \
     kernel/entry.S \
     kernel/uart.c \
     kernel/printf.c \
+	kernel/swtch.S \
+	kernel/proc.c \
+	kernel/proc_test.c \
+	kernel/tests.c \
     kernel/main.c \
     kernel/console.c \
     kernel/pmm.c \
     kernel/vmm.c \
     kernel/trap.c \
     kernel/timer.c \
-    kernel/kernelvec.S \
-	kernel/test.c
+    kernel/kernelvec.S
 
 KERNEL_OBJS = $(KERNEL_SRCS:.c=.o)
 KERNEL_OBJS := $(KERNEL_OBJS:.S=.o)

@@ -14,6 +14,10 @@ static inline uint64_t read_mtime(void) {
     volatile uint64_t *mtime = (volatile uint64_t *)CLINT_MTIME;
     return *mtime;
 }
+uint64_t get_time(void) {
+    volatile uint64_t *mtime = (volatile uint64_t *)CLINT_MTIME;
+    return *mtime;
+}
 
 /* 安全写入 mtimecmp 到指定 hart 的地址（使用 32-bit 顺序写以避免竞态） */
 static void write_mtimecmp_hart(uint64_t val, uint64_t hartid) {
@@ -30,33 +34,31 @@ static void write_mtimecmp_hart(uint64_t val, uint64_t hartid) {
 /* 设置下一次定时器中断（供初始化和中断处理时调用） */
 void set_next_timer(void) {
     uint64_t now = read_mtime();
-    uint64_t interval = 2000000;
+    uint64_t interval = 100000; /* 调试用间隔 */
     uint64_t next = now + interval;
 
+    /* 读取 mhartid，确保写到正确 hart 的 mtimecmp */
     uint64_t hartid;
     asm volatile("csrr %0, mhartid" : "=r"(hartid));
 
-    printf("set_next_timer: now=0x%llx, next=0x%llx, interval=0x%llx\n", 
-           now, next, interval);
+    /* 调试打印：打印 hartid 与时间的低 32 位，避免 64-bit 格式问题 */
+    printf("set_next_timer: hartid=%d now_lo=0x%x next_lo=0x%x\n",
+           (int)hartid, (uint32_t)now, (uint32_t)next);
 
     write_mtimecmp_hart(next, hartid);
 
-    // 验证
+    /* 读回验证（读回低 32 位） */
     volatile uint64_t *cmp64 = (volatile uint64_t *)(CLINT_MTIMECMP_BASE + hartid * 8);
     uint64_t readback = *cmp64;
-    uint64_t after_time = read_mtime();
-    
-    /*printf("VERIFY: wrote=0x%llx, readback=0x%llx, after_time=0x%llx\n", 
-           next, readback, after_time);*/
-    
-    
+    printf("set_next_timer: wrote mtimecmp_lo=0x%x readback_lo=0x%x\n",
+           (uint32_t)next, (uint32_t)readback);
 }
 
 /* 时钟中断处理函数（由 trap 分发调用） */
 void timer_interrupt_handler(struct trapframe *tf) {
     ticks++;
 
-    if (ticks % 100 == 0) {
+    if (ticks % 10 == 0) {
         printf("timer: tick %d\n", ticks);
     }
 

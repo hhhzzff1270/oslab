@@ -50,33 +50,7 @@ struct trapframe {
 // 中断类型：保留 S-mode 编号，新增 Machine timer 编号
 #define IRQ_S_TIMER  5
 #define IRQ_M_TIMER  7
-#define CSR_MSTATUS 0x300
-#define CSR_MIE     0x304
-#define CSR_MTVEC   0x305
-#define CSR_MEPC    0x341
-#define CSR_MCAUSE  0x342
-#define CSR_MTVAL   0x343
-#define CSR_MIP     0x344
 
-/* 中断使能位 */
-#define MIE_MTIE    (1 << 7)  // 机器模式定时器中断使能
-
-/* 中断挂起位 */
-#define MIP_MTIP    (1 << 7)  // 机器模式定时器中断挂起
-
-/* CSR 操作宏 */
-#define read_csr(reg) ({ unsigned long __tmp; \
-    asm volatile ("csrr %0, " #reg : "=r"(__tmp)); \
-    __tmp; })
-
-#define write_csr(reg, val) ({ \
-    asm volatile ("csrw " #reg ", %0" :: "r"(val)); })
-
-#define set_csr(reg, bit) ({ \
-    asm volatile ("csrs " #reg ", %0" :: "r"(bit)); })
-
-#define clear_csr(reg, bit) ({ \
-    asm volatile ("csrc " #reg ", %0" :: "r"(bit)); })
 // 函数声明
 void trap_init(void);
 void register_interrupt(int irq, interrupt_handler_t handler);

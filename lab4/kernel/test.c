@@ -1,5 +1,7 @@
 #include "trap.h"
 #include "printf.h"
+#include "test.h"
+#define uint64_t unsigned long
 static int timer_test_count = 0;
 
 // 测试时钟中断处理函数
@@ -10,28 +12,31 @@ void test_timer_handler(struct trapframe *tf) {
     // 设置下一次中断
     set_next_timer();
 }
-
+uint64_t get_time(void) {
+    // 读取 CLINT 的 mtime 寄存器
+    volatile uint64_t *mtime = (volatile uint64_t *)0x02000000UL + 0xBFF8UL / 8;
+    return *mtime;
+}
 // 测试时钟中断
 void test_timer_interrupt(void) {
     printf("Testing timer interrupt...\n");
-    
-    // 注册测试处理函数
-    register_interrupt(IRQ_S_TIMER, test_timer_handler);
-    
-    uint64 start_time = get_time();
-    int initial_count = timer_test_count;
-    
-    // 等待几次中断
-    while (timer_test_count < initial_count + 3) {
-        printf("Waiting for interrupt %d...\n", 
-               timer_test_count - initial_count + 1);
-        // 简单延时
-        for (volatile int i = 0; i < 1000000; i++);
+
+    // 用 M 模式定时器来测
+    register_interrupt(IRQ_M_TIMER, test_timer_handler);
+
+    // 重新设一次定时器，确保有后续中断
+    set_next_timer();
+
+    int target = timer_test_count + 3;
+    while (timer_test_count < target) {
+        asm volatile("wfi");
     }
+
+    printf("Timer test completed: %d interrupts\n",
+           timer_test_count);
     
-    uint64 end_time = get_time();
-    printf("Timer test completed: %d interrupts in %lu cycles\n", 
-           timer_test_count - initial_count, end_time - start_time);
+    // 如需恢复原来的处理函数：
+    register_interrupt(IRQ_M_TIMER, timer_interrupt_handler);
 }
 
 // 测试异常处理

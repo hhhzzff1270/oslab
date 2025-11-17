@@ -1,7 +1,7 @@
  //url=https://github.com/hhhzzff1270/oslab/blob/9401a3ea9a65e88acd55861cdedd13f275704160/lab4/kernel/main.c
 #include "printf.h"
 #include "trap.h"
-
+#include "test.h"
 void main() {
     printf("Kernel booting...\n");
 
@@ -25,7 +25,8 @@ void main() {
     printf("setting timer...\n");
     set_next_timer();
     printf("timer set successfully\n");
-
+    test_exception_handling();
+    test_timer_interrupt();
     printf("Entering main loop...\n");
 
     int loop_count = 0;
@@ -34,7 +35,7 @@ void main() {
 
         // 简单计数，防止完全卡死
         loop_count++;
-        if (loop_count % 1000000 == 0) {
+        if (loop_count % 10 == 0) {
             printf("main loop: %d\n", loop_count);
         }
     }
